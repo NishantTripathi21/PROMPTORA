@@ -1,7 +1,11 @@
+import { useAuth } from '@clerk/clerk-react';
+import axios from 'axios';
 import { Hash, Sparkle } from 'lucide-react';
 import React from 'react'
 import {useState} from "react"
-
+import toast from 'react-hot-toast';
+import Markdown from 'react-markdown';
+axios.defaults.baseURL = import.meta.env.VITE_BASE_URL;
 const BlogTitles = () => {
   const blogCategories = [
     "General", "Technology", "Business", "Health", "Lifestyle", "Education", "Travel", "Food"
@@ -9,10 +13,40 @@ const BlogTitles = () => {
   
     const [SelectedCategory, SetSelectedCategory]=  useState(blogCategories[0]);
     const [input, setInput] = useState("");
+    const [loading, setLoading]=  useState(false);
+    const [content, setContent] = useState("");
+
+    const {getToken} = useAuth();
   
     const onSubmitHandler = async (e) => {
       e.preventDefault();
-    }
+      try {
+        setLoading(true);
+        const prompt = `Generate a blog title for the keyword ${input} in the category ${SelectedCategory}`;
+        const token = await getToken();
+
+        const { data } = await axios.post(
+          "/api/ai/blog-title",
+          { prompt },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (data.success) {
+          setContent(data.message);
+        } else {
+          toast.error(data.message);
+        }
+      } catch (error) {
+        toast.error(error.message || "Request failed");
+      } finally {
+        setLoading(false);
+      }
+    };
+
   return (
     <div>
           <div className='f-full overflow-y-scroll p-6 flex 
@@ -22,7 +56,7 @@ const BlogTitles = () => {
             border border-gray-200'>
               <div className='flex items-center gap-3'>
                 <Sparkle className='w-6 text-[#8E37EB]'/>
-                <h1 className='text-xl font-semibold'>AI Title Generator</h1>
+                <h1 className='text-xl font-semibold'>Blog Title Generator</h1>
               </div>
               <p className=" mt-6 text-sm font-medium">Keyword</p>
               <input onChange={(e)=>setInput(e.target.value)} value = {input} type="text" className='w-full p-2 px-3 mt-2 outline-none
@@ -47,7 +81,11 @@ const BlogTitles = () => {
               <button className='w-full flex justify-center items-center gap-2
               bg-linear-to-r from-[#C341F6] to-[#65ADFF] text-white px-4 py-2
               mt-6 text-sm rounded-lg cursor-pointer'>
-                <Hash className='w-5'/>
+                {loading ? (
+                  <span className="w-4 h-4 my-1 rounded-full border-2 border-t-transparent animate-spin"></span>
+                ) : (
+                  <Hash className="w-5" />
+                )}
                 Generate Titles
               </button>
             </form>
@@ -59,14 +97,20 @@ const BlogTitles = () => {
                 <Hash className='w-5 h-5 text-[#8E37EB]'/>
                 <h1>Generated Titles</h1>
               </div>
-              <div className='flex-1 flex justify-center items-center'>
-                <div className='text-sm flex flex-col items-center gap-5 text-gray-400'>
-                  <Hash className='w-5 h-5'/>
-                  <p>Enter a topic and click generate title to get started</p>
-    
+              {!content ? (
+                <div className="flex-1 flex justify-center items-center">
+                  <div className="text-sm flex flex-col items-center gap-5 text-gray-400">
+                    <Hash className="w-9 h-9" />
+                    <p>Enter a topic and click "Generate title" to get started</p>
+                  </div>
                 </div>
-    
-              </div>
+              ) : (
+                <div className="mt-3 h-full overflow-y-scroll text-sm text-slate-600">
+                  <div className="reset-tw">
+                    <Markdown>{content}</Markdown>
+                  </div>
+                </div>
+              )}
     
             </div>
           </div>

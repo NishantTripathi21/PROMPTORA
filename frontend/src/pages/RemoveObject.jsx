@@ -1,13 +1,48 @@
+import { useState } from "react";
 import { Scissors, Sparkles } from "lucide-react";
-import React, { useState } from "react";
+import axios from "axios";
+import { useAuth } from "@clerk/clerk-react";
+import toast from "react-hot-toast";
 
 const RemoveObject = () => {
   const [input, setInput] = useState("");
 
   const [object, setObject] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [content, setContent] = useState("");
 
+  const { getToken } = useAuth();
+  function normalizeInput(str) {
+    return str
+      .trim()
+      .replace(/\s+/g, '-')
+      .toLowerCase();
+  }
   const onSubmitHandler = async (e) => {
     e.preventDefault();
+
+    try {
+      setLoading(true);
+      const formData = new FormData();
+      formData.append("image", input);
+      formData.append("object", object);
+
+      const { data } = await axios.post(
+        "/api/ai/remove-image-object",
+        formData,
+        { headers: { Authorization: `Bearer ${await getToken()}` } }
+      );
+
+      if (data.success) {
+        setContent(data.content);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+
+    setLoading(false);
   };
   return (
     <div>
@@ -36,7 +71,7 @@ const RemoveObject = () => {
           />
           <p className=" mt-6 text-sm font-medium">Describe Object name to remove</p>
           <textarea
-            onChange={(e) => setObject(e.target.value)}
+            onChange={(e) => setObject(normalizeInput(e.target.value))}
             value={object}
             rows={4}
             className="w-full p-2 px-3 mt-2 outline-none
@@ -45,12 +80,16 @@ const RemoveObject = () => {
             required
           ></textarea>
 
-          <button
+          <button disabled={loading}
             className="w-full flex justify-center items-center gap-2
                 bg-linear-to-r from-[#417DF6] to-[#8E37EB] text-white px-4 py-2
                 mt-6 text-sm rounded-lg cursor-pointer"
           >
-            <Scissors className="w-5" />
+            {loading ? (
+              <span className="w-4 h-4 my-1 rounded-full border-2 border-t-transparent animate-spin"></span>
+            ) : (
+              <Scissors className="w-5" />
+            )}
             Remove Object
           </button>
         </form>
@@ -64,12 +103,16 @@ const RemoveObject = () => {
             <Scissors className="w-5 h-5 text-[#4A7AFF]" />
             <h1>Processed Image</h1>
           </div>
-          <div className="flex-1 flex justify-center items-center">
-            <div className="text-sm flex flex-col items-center gap-5 text-gray-400">
-              <Scissors className="w-5 h-5" />
-              <p>Upload an image and click remove object to get started</p>
+          {!content ? (
+            <div className="flex-1 flex justify-center items-center">
+              <div className="text-sm flex flex-col items-center gap-5 text-gray-400">
+                <Scissors className="w-9 h-9" />
+                <p>Upload an image and click "Remove Object" to get started</p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <img src={content} alt="image" className="mt-3 w-full h-full" />
+          )}
         </div>
       </div>
     </div>

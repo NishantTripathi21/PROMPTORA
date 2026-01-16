@@ -26,7 +26,7 @@ const CreationItems = ({ item }) => {
       {
         expanded && (
             <div>
-                {item.type === 'image' ? (
+                {item.content.includes('.png') ? (
                     <div>
                         <img src={item.content} alt=""
                          className=' mt-3 w-full max-w-md' />

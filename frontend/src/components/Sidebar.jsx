@@ -18,7 +18,6 @@ const naviItems = [
 
 const Sidebar = ({sidebar, setSidebar})=>{
     const {user} = useUser();
-    console.log(user)
     const {signOut, openUserProfile} = useClerk();
     return (
         <div className={`w-60 bg-white border-r border-gray-200

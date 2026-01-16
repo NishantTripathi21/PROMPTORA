@@ -32,7 +32,7 @@ export const generateArticle = async (req: Request, res: Response) => {
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       config: {
         temperature: 0.7,
-        maxOutputTokens: length,
+        maxOutputTokens: length*10,
       },
     });
 
@@ -40,7 +40,7 @@ export const generateArticle = async (req: Request, res: Response) => {
 
     await sql`
       INSERT INTO creations (user_id, prompt, content, type)
-      VALUES (${userId}, ${prompt}, ${content}, 'article')
+      VALUES (${userId}, ${prompt}, ${content}, 'Generate article')
     `;
 
     if (plan !== "premium") {
@@ -74,12 +74,9 @@ export const generateBlogTitle = async (req: Request, res: Response) => {
         message: "Limit reached. Upgrade to continue.",
       });
     }
-    const newPrompt = `I'm writing a new blog and I want you to suggest me a 
-    good, creative, atractive title for my blog. Just Suggest me 3 blog titles
-    No rubbish, Just titls. Here is blog topic: ${prompt}`
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: [{ role: "user", parts: [{ text: newPrompt }] }],
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
       config: {
         temperature: 0.7,
         maxOutputTokens: 1000,
@@ -102,7 +99,7 @@ export const generateBlogTitle = async (req: Request, res: Response) => {
       });
     }
 
-    res.json({ success: true, content });
+    res.json({ success: true, message: content });
   } catch (error: any) {
     console.log(error.message);
     res.json({ success: false, message: error.message });
@@ -146,7 +143,7 @@ export const generateImage = async (req: Request, res: Response) => {
 
     await sql`
       INSERT INTO creations (user_id, prompt, content, type, publish)
-      VALUES (${userId}, ${prompt}, ${secure_url}, 'image', ${publish ?? false})
+      VALUES (${userId}, ${prompt}, ${secure_url}, 'Image Generation', ${publish ?? false})
     `;
 
     if (plan !== "premium") {
@@ -199,7 +196,7 @@ export const removeBackground = async (req: Request, res: Response) => {
 
     await sql`
       INSERT INTO creations (user_id, prompt, content, type)
-      VALUES (${userId},'Remove Background', ${secure_url}, 'image')
+      VALUES (${userId},'Remove Background', ${secure_url}, 'Remove Background')
     `;
 
     if (plan !== "premium") {
@@ -250,7 +247,7 @@ export const removeImageObject = async (req: Request, res: Response) => {
 
     await sql`
       INSERT INTO creations (user_id, prompt, content, type)
-      VALUES (${userId}, 'Remove Object', ${secure_url}, 'image')
+      VALUES (${userId}, 'Remove Object', ${secure_url}, 'Remove Object')
     `;
 
     if (plan !== "premium") {
@@ -323,7 +320,7 @@ export const reviewResume = async (req: Request, res: Response) => {
 
     await sql`
       INSERT INTO creations (user_id, prompt, content, type)
-      VALUES (${userId}, 'Review Resume', ${content}, 'image')
+      VALUES (${userId}, 'Review Resume', ${content}, 'Resume Review')
     `;
 
     if (plan !== "premium") {
