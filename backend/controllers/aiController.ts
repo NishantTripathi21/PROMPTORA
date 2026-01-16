@@ -241,16 +241,16 @@ export const removeImageObject = async (req: Request, res: Response) => {
             message: "Image not found"
         })
     }
-    const { public_id } = await cloudinary.uploader.upload(image.path);
-
-    const image_url = cloudinary.url(public_id, {
-        transformation: [{effect: `gen_remove: ${object}`}],
-        resource_type: "image"
-    })
+    console.log(object)
+    const {secure_url} = await cloudinary.uploader.upload(image.path, {
+      transformation:[{
+        effect: `gen_remove:${object}`
+      }]
+    });
 
     await sql`
       INSERT INTO creations (user_id, prompt, content, type)
-      VALUES (${userId}, 'Remove Object', ${image_url}, 'image')
+      VALUES (${userId}, 'Remove Object', ${secure_url}, 'image')
     `;
 
     if (plan !== "premium") {
@@ -262,7 +262,7 @@ export const removeImageObject = async (req: Request, res: Response) => {
       });
     }
 
-    res.json({ success: true, content: image_url });
+    res.json({ success: true, content: secure_url });
   } catch (error: any) {
     console.log(error.message);
     res.json({ success: false, message: error.message });
@@ -301,22 +301,25 @@ export const reviewResume = async (req: Request, res: Response) => {
 
     const dataBuffer = fs.readFileSync(resume.path);
     const pdfData = await new PDFParse({data: dataBuffer}) 
-    console.log(pdfData)
+    const result = await  pdfData.getText()
+    //console.log(result.text)
 
     const prompt = `Review the following resume and provide honest and brutal truthful feedback on its strengths, weakness,
-    and areas for improvement. Resume Content: \n\n${pdfData.getText}`
-
+    and areas for improvement.and if u think this is not resume file/text, just say "This isnt any resume". Resume Content: \n\n${result.text}`
 
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       config: {
         temperature: 0.7,
-        maxOutputTokens: 1500,
+        maxOutputTokens: 2000,
       },
     });
 
     const content = response.text;
+    if(!content) {
+      return res.json({success: false, message: "Something went wrong"})
+    }
 
     await sql`
       INSERT INTO creations (user_id, prompt, content, type)
@@ -332,7 +335,7 @@ export const reviewResume = async (req: Request, res: Response) => {
       });
     }
 
-    res.json({ success: true, content: content, pdfData });
+    res.json({ success: true, content: content });
   } catch (error: any) {
     console.log(error.message);
     res.json({ success: false, message: error.message });
