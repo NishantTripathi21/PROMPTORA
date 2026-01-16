@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import Home from './pages/Home'
 import Dashboard from './pages/Dashboard'
@@ -10,9 +10,16 @@ import RemoveBackground from './pages/RemoveBackground'
 import RemoveObject from './pages/RemoveObject'
 import ReviewResume from './pages/ReviewResume'
 import Community from './pages/Community'
+import { useAuth } from '@clerk/clerk-react'
 
 
 const App = () => {
+  const {getToken} = useAuth()
+
+  useEffect(async()=>{
+    const token = await getToken()
+    console.log(token)
+  },[])
   return (
     <div>
       <Routes>
