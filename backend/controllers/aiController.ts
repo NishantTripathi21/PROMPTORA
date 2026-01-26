@@ -35,9 +35,7 @@ export const generateArticle = async (req: Request, res: Response) => {
         maxOutputTokens: length*10,
       },
     });
-
     const content = response.text;
-
     await sql`
       INSERT INTO creations (user_id, prompt, content, type)
       VALUES (${userId}, ${prompt}, ${content}, 'Generate article')
@@ -51,8 +49,7 @@ export const generateArticle = async (req: Request, res: Response) => {
         },
       });
     }
-
-    res.json({ success: true, content });
+    res.json({ success: true, message: content });
   } catch (error: any) {
     console.log(error.message);
     res.json({ success: false, message: error.message });
