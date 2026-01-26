@@ -25,9 +25,8 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
       (privateMetadata.free_usage_of_premium_features as number) || 0;
 
     req.plan = hasPremiumPlan ? "premium" : "free";
-
     next();
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };

@@ -23,18 +23,18 @@ const WriteArticle = () => {
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
+    const token = await getToken();
     try {
       setLoading(true);
       const prompt = `Write an Article about ${input} in ${selectedLength.text}`
       const length = selectedLength.length
       const {data} = await axios.post("/api/ai/generate-article", {prompt, length },{
-        header: {
-          Authorization: `Bearer ${getToken()}`
+        headers: {
+          Authorization: `Bearer ${token}`
         }
-      })
-
+      })      
       if(data.success) {
-        setContent(data.content);
+        setContent(data.message);
       }
       else{
         toast.error(data.message);
@@ -103,7 +103,7 @@ const WriteArticle = () => {
 
           </div>): (
             <div className='mt-3 h-full overflow-y-scroll text-sm text-slate-200'>
-              <div>{Content}</div>
+              <div>{content}</div>
             </div>
           )
 
