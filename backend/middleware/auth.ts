@@ -15,19 +15,38 @@ declare global {
 export const auth = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { userId, has } = await req.auth();
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
     const hasPremiumPlan = await has({ plan: "premium" });
 
     const user = await clerkClient.users.getUser(userId);
     const privateMetadata = user.privateMetadata || {};
 
-    req.free_usage = (privateMetadata.free_usage as number) || 0;
-    req.free_usage_of_premium_features =
-      (privateMetadata.free_usage_of_premium_features as number) || 0;
+    let free_usage = privateMetadata.free_usage as number | 0;
+    let free_usage_of_premium_features =
+      privateMetadata.free_usage_of_premium_features as number | 0;
 
+    if (free_usage === 0 || free_usage_of_premium_features === 0) {
+      await clerkClient.users.updateUserMetadata(userId, {
+        privateMetadata: {
+          free_usage: 0,
+          free_usage_of_premium_features: 0,
+        },
+      });
+    }
+
+    req.free_usage = free_usage;
+    req.free_usage_of_premium_features = free_usage_of_premium_features;
     req.plan = hasPremiumPlan ? "premium" : "free";
 
     next();
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
