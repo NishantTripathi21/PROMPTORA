@@ -8,16 +8,21 @@ import userRouter from "./routes/userRoutes.js";
 
 const app = express();
 connectCloudinary();
+
 app.use(cors());
 app.use(express.json());
-app.use(clerkMiddleware())
+app.use(clerkMiddleware());
 
 app.get("/", (req: Request, res: Response) => {
   res.send("server is live");
 });
-app.use(requireAuth())
-app.use('/api/ai', aiRouter);
+
+// All routes below this line will require authentication
+app.use(requireAuth());
+
+app.use("/api/ai", aiRouter);
 app.use("/api/user", userRouter);
+
 const port: number = Number(process.env.PORT) || 4000;
 
 app.listen(port, () => {
